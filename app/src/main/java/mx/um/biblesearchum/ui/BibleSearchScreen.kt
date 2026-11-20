@@ -8,13 +8,31 @@ import androidx.compose.foundation.verticalScroll
 
 import androidx.compose.material.icons.Icons
 
+import androidx.compose.material.icons.filled.Favorite
+
+import androidx.compose.material.icons.filled.FavoriteBorder
+
 import androidx.compose.material.icons.filled.Refresh
+
+import androidx.compose.material.icons.filled.Share
 
 import androidx.compose.material3.*
 
 import androidx.compose.runtime.Composable
 
 import androidx.compose.runtime.getValue
+
+import androidx.compose.runtime.mutableStateOf
+
+import androidx.compose.runtime.saveable.rememberSaveable
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.ui.platform.LocalContext
+
+import androidx.activity.compose.BackHandler
+
+import mx.um.biblesearchum.util.shareVerse
 
 import androidx.compose.ui.Alignment
 
@@ -44,6 +62,21 @@ fun BibleSearchScreen(viewModel: BibleViewModel) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+
+    var showFavorites by rememberSaveable { mutableStateOf(false) }
+
+    if (showFavorites) {
+        BackHandler { showFavorites = false }
+        FavoritesScreen(
+            favorites = uiState.favorites,
+            onBack = { showFavorites = false },
+            onRemove = { viewModel.removeFavorite(it) },
+            onShare = { shareVerse(context, it.reference, it.text) }
+        )
+        return
+    }
+
     Scaffold(
 
         topBar = {
@@ -71,6 +104,20 @@ fun BibleSearchScreen(viewModel: BibleViewModel) {
                 ),
 
                 actions = {
+
+                    IconButton(onClick = { showFavorites = true }) {
+
+                        Icon(
+
+                            imageVector = Icons.Default.Favorite,
+
+                            contentDescription = "Ver favoritos",
+
+                            tint = MaterialTheme.colorScheme.onPrimary
+
+                        )
+
+                    }
 
                     IconButton(onClick = { viewModel.clearSelection() }) {
 
@@ -263,6 +310,27 @@ fun BibleSearchScreen(viewModel: BibleViewModel) {
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            IconButton(onClick = { viewModel.toggleFavorite() }) {
+                                Icon(
+                                    imageVector = if (uiState.isCurrentFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = if (uiState.isCurrentFavorite) "Quitar de favoritos" else "Guardar en favoritos",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            IconButton(onClick = {
+                                uiState.currentFavorite?.let { shareVerse(context, it.reference, it.text) }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = "Compartir versículo",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
 
                     }
 

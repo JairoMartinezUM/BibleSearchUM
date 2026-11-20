@@ -1,7 +1,10 @@
 package mx.um.biblesearchum.ui
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import mx.um.biblesearchum.data.FavoriteVerse
+import mx.um.biblesearchum.data.FavoritesRepository
 import mx.um.biblesearchum.model.BibleBook
 import mx.um.biblesearchum.network.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,11 +13,32 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class BibleViewModel : ViewModel() {
+class BibleViewModel(application: Application) : AndroidViewModel(application) {
+    private val favoritesRepository = FavoritesRepository(application)
+
     private val _uiState = MutableStateFlow(BibleUiState())
     val uiState: StateFlow<BibleUiState> = _uiState.asStateFlow()
     init {
         fetchBooks()
+        observeFavorites()
+    }
+
+    private fun observeFavorites() {
+        viewModelScope.launch {
+            favoritesRepository.favorites.collect { list ->
+                _uiState.update { it.copy(favorites = list) }
+            }
+        }
+    }
+
+    /** Guarda el versículo actual como favorito o lo quita si ya lo era. */
+    fun toggleFavorite() {
+        val current = _uiState.value.currentFavorite ?: return
+        viewModelScope.launch { favoritesRepository.toggle(current) }
+    }
+
+    fun removeFavorite(favorite: FavoriteVerse) {
+        viewModelScope.launch { favoritesRepository.remove(favorite) }
     }
 
     fun fetchBooks() {
@@ -85,7 +109,7 @@ class BibleViewModel : ViewModel() {
 
     fun clearSelection() {
         _uiState.update {
-            BibleUiState(books = it.books)
+            BibleUiState(books = it.books, favorites = it.favorites)
         }
     }
 }

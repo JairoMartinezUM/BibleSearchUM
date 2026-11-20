@@ -3,6 +3,7 @@
 App Android hecha con **Jetpack Compose** y **Material 3** que consulta pasajes bíblicos
 (versión Reina-Valera 1960) mediante la API REST de [Bolls Bible](https://bolls.life/).
 Se elige **Libro → Capítulo → Versículo** con menús desplegables dependientes y se muestra el texto.
+Incluye **compartir** el versículo y una lista de **favoritos** guardada en el dispositivo.
 
 ## Arquitectura (MVVM)
 
@@ -10,18 +11,21 @@ Se elige **Libro → Capítulo → Versículo** con menús desplegables dependie
 app/src/main/java/mx/um/biblesearchum/
 ├── MainActivity.kt                 # Punto de entrada; monta BibleSearchScreen
 ├── model/BibleModels.kt            # BibleBook, BibleVerse (Gson)
+├── data/                           # FavoriteVerse + FavoritesRepository (Preferences DataStore)
+├── util/ShareUtils.kt              # Compartir con Intent.ACTION_SEND
 ├── network/BibleApiService.kt      # Retrofit: interfaz + RetrofitInstance
 └── ui/
     ├── BibleUiState.kt             # Estado inmutable de la pantalla
     ├── BibleViewModel.kt           # StateFlow + corrutinas (carga, éxito, error)
     ├── BibleSearchScreen.kt        # Pantalla en Compose
+    ├── FavoritesScreen.kt          # Pantalla de favoritos
     └── components/DropdownSelector.kt  # Selector reutilizable (ExposedDropdownMenuBox)
 ```
 
 ## Tecnologías
 
 Kotlin 2.2 · Jetpack Compose (Material 3) · ViewModel + StateFlow · Retrofit 2 + Gson ·
-Kotlin Coroutines · minSdk 26.
+Kotlin Coroutines · Preferences DataStore · minSdk 26.
 
 ## Endpoints usados
 
@@ -49,3 +53,11 @@ Kotlin Coroutines · minSdk 26.
 2. Selecciona el capítulo; se habilita el **Versículo**.
 3. Selecciona el versículo para ver el texto. El icono de refrescar reinicia la selección.
 4. Se muestran indicador de carga y mensajes de error si falla la red.
+5. **Compartir:** el icono de compartir de la tarjeta abre el selector del sistema (`Intent.ACTION_SEND`) con la cita y su referencia.
+6. **Favoritos:** el corazón de la tarjeta guarda o quita el versículo; el corazón de la barra superior abre la lista de favoritos, donde se pueden compartir o eliminar. Se conservan al cerrar la app.
+
+## Pruebas
+
+```bash
+./gradlew testDebugUnitTest
+```
